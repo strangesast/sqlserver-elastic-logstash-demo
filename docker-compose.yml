@@ -1,0 +1,46 @@
+version: "3.9"
+services:
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0
+    environment:
+      - "ES_PORT=9200"
+      - cluster.name=elastic
+      - discovery.type=single-node
+      - transport.host=0.0.0.0
+      - http.host=0.0.0.0
+      - xpack.security.enabled=false
+
+    ports:
+      - 9200:9200
+      - 9300:9300
+  logstash:
+    #image: docker.elastic.co/logstash/logstash:8.1.0
+    build:
+      context: .
+      dockerfile: docker/logstash/Dockerfile
+    volumes:
+      - ./pipeline/:/usr/share/logstash/pipeline/
+      - ./logstash.yml:/etc/logstash/logstash.yml
+  db:
+    image: mcr.microsoft.com/azure-sql-edge
+    environment:
+      - "MSSQL_SA_PASSWORD=Password--"
+      - "ACCEPT_EULA=1"
+      - "DATABASE_PORT=1433"
+    ports:
+      - 1433:1433
+  server:
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
+    environment:
+      - "PORT=8080"
+      - "DB_USER=sa"
+      - "DB_PASSWORD=Password--"
+      - "DB_SERVER=db"
+  client:
+    build:
+      context: .
+      dockerfile: docker/client/Dockerfile
+    ports:
+      - 8080:80

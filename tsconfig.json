@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "outDir": "./build",
+    "rootDir": "./src",
+    "esModuleInterop": true
+  },
+  "files": [],
+  "references": [
+    { "path": "src/client" },
+    { "path": "src/server" }
+  ]
+}
