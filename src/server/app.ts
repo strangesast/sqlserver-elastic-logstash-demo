@@ -18,6 +18,21 @@ const port = config.get("port");
 app.use(bodyParser.json());
 app.use(morgan("tiny"));
 
+let i = 0;
+app.post("/search", async (req, res) => {
+  i++;
+  let cancelled = false;
+  let interval = setTimeout(() => {
+    if (!cancelled) {
+      res.json({ i });
+    }
+  }, 1000);
+  req.on("close", () => {
+    cancelled = true;
+    clearInterval(interval);
+  });
+});
+
 app.get("/people", async (req, res) => {
   const result = await knex.select("*").from("People");
 
@@ -29,6 +44,7 @@ app.post("/people", async (req, res) => {
   const result = await knex("People")
     .insert({ FirstName, LastName })
     .returning(["id", "FirstName", "LastName"]);
+
   res.json(result);
 });
 

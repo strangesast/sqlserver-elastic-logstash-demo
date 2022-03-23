@@ -6,6 +6,67 @@ interface IPerson {
   LastName: string;
 }
 
+let abort: any = null;
+
+const searchInputHandler = async (e: any) => {
+  if (abort != null) {
+    abort();
+  }
+
+  const value = Object.fromEntries(
+    new FormData(document.body.querySelector("#search")).entries()
+  );
+
+  let results: any[];
+
+  if (!value?.search || !value?.mode) {
+    abort = null;
+    results = [];
+  } else {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    abort = controller.abort.bind(controller);
+
+    const indexName = "people";
+    const url = `/elastic/${indexName}/_search`;
+    const body =
+      value.mode === "query_string"
+        ? {
+            query: {
+              query_string: {
+                query: value.search,
+              },
+            },
+          }
+        : {
+            query: {
+              multi_match: {
+                fields: ["FirstName", "LastName"],
+                query: value.search,
+                type: "phrase_prefix",
+              },
+            },
+          };
+    results = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: JSON.stringify(body),
+    })
+      .catch((e) => null)
+      .then((r) => (r != null ? r.json() : null))
+      .then((o) => (o?.hits?.hits ?? []).map((o: any) => o._source));
+  }
+  render(
+    document.body.querySelector("#searchResults"),
+    html`
+      <ul>
+        ${results.map((o: any) => html`<li>${o.FirstName} ${o.LastName}</li>`)}
+      </ul>
+    `
+  );
+};
+
 const buttonHandler = async (e: any) => {
   const formData = new FormData(e.target);
 
@@ -36,6 +97,19 @@ const refresh = async () => {
   render(
     document.body,
     html`
+      <h1>Search</h1>
+      <form id="search" oninput=${searchInputHandler}>
+        <div>
+          <input type="radio" id="mode-a" name="mode" value="query_string" />
+          <label for="mode-a">query_string</label>
+          <input type="radio" id="mode-b" name="mode" value="phrase_prefix" />
+          <label for="mode-b">phrase_prefix</label>
+        </div>
+        <div>
+          <input type="text" placeholder="Search" name="search" />
+        </div>
+      </form>
+      <div id="searchResults"></div>
       <h1>Create Person</h1>
       <form onsubmit=${buttonHandler}>
         <input type="text" placeholder="FirstName" name="FirstName" />

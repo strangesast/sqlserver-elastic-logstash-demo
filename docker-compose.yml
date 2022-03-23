@@ -20,7 +20,7 @@ services:
       dockerfile: docker/logstash/Dockerfile
     volumes:
       - ./pipeline/:/usr/share/logstash/pipeline/
-      - ./logstash.yml:/etc/logstash/logstash.yml
+      - ./logstash.yml:/usr/share/logstash/config/logstash.yml
   db:
     image: mcr.microsoft.com/azure-sql-edge
     environment:
