@@ -4,6 +4,7 @@ interface IPerson {
   id: number;
   FirstName: string;
   LastName: string;
+  Deleted: boolean;
 }
 
 let abort: any = null;
@@ -55,13 +56,13 @@ const searchInputHandler = async (e: any) => {
     })
       .catch((e) => null)
       .then((r) => (r != null ? r.json() : null))
-      .then((o) => (o?.hits?.hits ?? []).map((o: any) => o._source));
+      .then((o) => o?.hits?.hits ?? []);
   }
   render(
     document.body.querySelector("#searchResults"),
     html`
       <ul>
-        ${results.map((o: any) => html`<li>${o.FirstName} ${o.LastName}</li>`)}
+        ${results.map((o: any) => html`<li>${o._source.FirstName} ${o._source.LastName} (${o._index})</li>`)}
       </ul>
     `
   );
@@ -120,15 +121,28 @@ const refresh = async () => {
 
       <h1>People</h1>
       <ul>
-        ${people.map(
-          (person) => html`
-            <li>
-              <span>${person.FirstName} ${person.LastName} (${person.id})</span>
-              <button onclick=${deleteHandler.bind(null, person)}>
-                Delete
-              </button>
-            </li>
-          `
+        ${people.map((person) =>
+          !person.Deleted
+            ? html`
+                <li>
+                  <span
+                    >${person.FirstName} ${person.LastName} (${person.id})</span
+                  >
+                  <button onclick=${deleteHandler.bind(null, person)}>
+                    Delete
+                  </button>
+                </li>
+              `
+            : html`
+                <li>
+                  <s
+                    ><span
+                      >${person.FirstName} ${person.LastName}
+                      (${person.id})</span
+                    ></s
+                  >
+                </li>
+              `
         )}
       </ul>
     `

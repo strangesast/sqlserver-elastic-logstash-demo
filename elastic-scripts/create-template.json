@@ -1,0 +1,18 @@
+{
+  "index_patterns": ["people-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.lifecycle.name": "default_policy",
+      "index.lifecycle.rollover_alias": "people"
+    },
+    "mappings": {
+      "properties": {
+        "id": { "type": "integer" },
+        "FirstName": { "type": "text" },
+        "LastName": { "type": "text" }
+      }
+    }
+  }
+}

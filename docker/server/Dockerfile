@@ -21,6 +21,7 @@ run npm ci
 copy --from=builder /usr/src/app/build/server/ .
 copy config config
 copy migrations migrations
+copy seeds seeds
 copy knexfile.js .
 copy start-server.sh .
 

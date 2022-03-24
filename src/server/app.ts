@@ -50,7 +50,7 @@ app.post("/people", async (req, res) => {
 
 app.delete("/people", async (req, res) => {
   const { id } = req.body;
-  const result = await knex("People").where({ id }).delete();
+  const result = await knex("People").where({ id }).update({ Deleted: true });
   res.json(result);
 });
 

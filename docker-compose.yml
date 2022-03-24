@@ -7,9 +7,9 @@ services:
       - cluster.name=elastic
       - discovery.type=single-node
       - transport.host=0.0.0.0
+      - indices.lifecycle.poll_interval=30s
       - http.host=0.0.0.0
       - xpack.security.enabled=false
-
     ports:
       - 9200:9200
       - 9300:9300
