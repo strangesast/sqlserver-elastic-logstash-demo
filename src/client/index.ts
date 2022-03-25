@@ -7,6 +7,8 @@ interface IPerson {
   Deleted: boolean;
 }
 
+const modes = ["query_string", "phrase_prefix", "match_full_name"];
+
 let abort: any = null;
 
 const searchInputHandler = async (e: any) => {
@@ -39,12 +41,29 @@ const searchInputHandler = async (e: any) => {
               },
             },
           }
-        : {
+        : value.mode === "phrase_prefix"
+        ? {
             query: {
-              multi_match: {
+              // multi_match: {
+              //   fields: ["FirstName", "LastName"],
+              //   query: value.search,
+              //   type: "phrase_prefix",
+              // },
+              combined_fields: {
                 fields: ["FirstName", "LastName"],
                 query: value.search,
-                type: "phrase_prefix",
+                operator: "and",
+              },
+            },
+          }
+        : {
+            query: {
+              match: {
+              // match_phrase_prefix: {
+                FullName: {
+                  query: value.search,
+                  operator: "and",
+                },
               },
             },
           };
@@ -56,13 +75,22 @@ const searchInputHandler = async (e: any) => {
     })
       .catch((e) => null)
       .then((r) => (r != null ? r.json() : null))
-      .then((o) => o?.hits?.hits ?? []);
+      .then((o) =>
+        (o?.hits?.hits ?? []).sort((a: any, b: any) =>
+          a._score > b._score ? -1 : 1
+        )
+      );
   }
   render(
     document.body.querySelector("#searchResults"),
     html`
       <ul>
-        ${results.map((o: any) => html`<li>${o._source.FirstName} ${o._source.LastName} (${o._index})</li>`)}
+        ${results.map(
+          (o: any) =>
+            html`<li>
+              ${o._source.FirstName} ${o._source.LastName} (${o._score})
+            </li>`
+        )}
       </ul>
     `
   );
@@ -93,18 +121,30 @@ const deleteHandler = async (o: any) => {
 const refresh = async () => {
   // const q = new URLSearchParams({ pretty: "true" });
 
-  const people = await getPeople();
+  const peopleResults = await getPeople();
 
   render(
     document.body,
     html`
       <h1>Search</h1>
-      <form id="search" oninput=${searchInputHandler}>
+      <form
+        id="search"
+        oninput=${searchInputHandler}
+        onSubmit="return false;"
+        action=""
+      >
         <div>
-          <input type="radio" id="mode-a" name="mode" value="query_string" />
-          <label for="mode-a">query_string</label>
-          <input type="radio" id="mode-b" name="mode" value="phrase_prefix" />
-          <label for="mode-b">phrase_prefix</label>
+          ${modes.map(
+            (s, i) => html`
+              <input
+                type="radio"
+                id="${"mode-" + i}"
+                name="mode"
+                value="${s}"
+              />
+              <label for="${"mode-" + i}">${s}</label>
+            `
+          )}
         </div>
         <div>
           <input type="text" placeholder="Search" name="search" />
@@ -119,9 +159,9 @@ const refresh = async () => {
         <button type="reset">Clear</button>
       </form>
 
-      <h1>People</h1>
+      <h1>People (${peopleResults.limit}/${peopleResults.total})</h1>
       <ul>
-        ${people.map((person) =>
+        ${peopleResults.results.map((person) =>
           !person.Deleted
             ? html`
                 <li>
@@ -157,10 +197,30 @@ async function getHealth() {
   return body;
 }
 
-async function getPeople(): Promise<IPerson[]> {
-  const response = await fetch(`/api/people`);
-  const body = await response.json();
-  return body;
+async function getPeople(
+  offset?: number,
+  limit?: number
+): Promise<{
+  results: IPerson[];
+  offset: number;
+  limit: number;
+  total: number;
+}> {
+  const q = new URLSearchParams();
+  if (offset) {
+    q.append("offset", "" + offset);
+  }
+  if (limit) {
+    q.append("limit", "" + limit);
+  }
+  const s = q.toString();
+  const response = await fetch(`/api/people${s.length ? "?" + s : ""}`);
+  if (response.status >= 200 && response.status < 400) {
+    const body = await response.json();
+    return body;
+  }
+  const msg = await response.text();
+  return Promise.reject(msg);
 }
 
 async function createPeople(o: IPerson) {

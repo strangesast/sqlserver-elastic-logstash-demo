@@ -34,9 +34,17 @@ app.post("/search", async (req, res) => {
 });
 
 app.get("/people", async (req, res) => {
-  const result = await knex.select("*").from("People");
+  let offset, limit;
+  ({ offset, limit } = req.query);
+  [offset, limit] = [offset, limit].map((n) => +(n as string));
+  [offset, limit] = [offset || 0, limit || 10];
 
-  res.json(result);
+  const [results, { count: total }] = await Promise.all([
+    knex.select("*").from("People").offset(offset).limit(limit),
+    knex.from("People").count({ count: "*" }).first() as any,
+  ]);
+
+  res.json({ offset, limit, results, total });
 });
 
 app.post("/people", async (req, res) => {

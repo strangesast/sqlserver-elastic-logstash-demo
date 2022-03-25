@@ -1,0 +1,10 @@
+{
+  "query": {
+    "match" : {
+      "FullName": {
+        "query": "Lonny Homenick",
+        "operator": "and"
+      }
+    }
+  }
+}

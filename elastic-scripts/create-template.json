@@ -10,8 +10,9 @@
     "mappings": {
       "properties": {
         "id": { "type": "integer" },
-        "FirstName": { "type": "text" },
-        "LastName": { "type": "text" }
+        "FirstName": { "type": "text", "copy_to": "FullName" },
+        "LastName": { "type": "text", "copy_to": "FullName" },
+        "FullName": { "type": "text" }
       }
     }
   }
